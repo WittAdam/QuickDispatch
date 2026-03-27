@@ -103,7 +103,11 @@ def build_daily_routes(db: Session, company: Company, target_date: date) -> dict
     tech_stops: dict[uuid.UUID, list[ScheduledStop]] = {}
 
     for tech in techs:
-        eligible = [j for j in jobs if tech.can_handle_job(j.required_skills)]
+        # Only offer jobs that haven't been claimed by a previous technician
+        eligible = [
+            j for j in jobs
+            if tech.can_handle_job(j.required_skills) and j.id not in assigned_ids
+        ]
         stops = optimize_route(tech, eligible, company, target_date)
         tech_stops[tech.id] = stops
         for stop in stops:
