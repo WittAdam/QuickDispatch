@@ -148,7 +148,20 @@ def optimize_route(
     route: list[ScheduledStop] = []
     sequence = 1
 
+    work_end_time = datetime(
+        target_date.year, target_date.month, target_date.day,
+        company.work_end_hour, 0, 0
+    )
+
     while remaining:
+        # Stop if tech has hit the max jobs limit for the day
+        if len(route) >= company.max_jobs_per_day:
+            break
+
+        # Stop if current time is past the end of the workday
+        if current_time >= work_end_time:
+            break
+
         best_job: Optional[Job] = None
         best_score = float("inf")
 
@@ -160,6 +173,12 @@ def optimize_route(
                 company.road_factor,
             )
             projected_arrival = current_time + timedelta(minutes=travel_mins)
+
+            # Skip this job if completing it would push past end of workday
+            projected_departure = projected_arrival + timedelta(minutes=job.estimated_duration_minutes)
+            if projected_departure > work_end_time + timedelta(hours=1):
+                continue
+
             score = float(travel_mins)
 
             # Time window pressure — pull jobs with closing windows earlier

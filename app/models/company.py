@@ -30,6 +30,9 @@ class Company(Base):
     # Buffer time added between jobs (parking, setup, wrap-up)
     buffer_minutes: Mapped[int] = mapped_column(Integer, default=15)
 
+    # Maximum jobs per technician per day — prevents overloading one tech
+    max_jobs_per_day: Mapped[int] = mapped_column(Integer, default=8)
+
     # How heavily to penalize time window violations in optimization scoring
     violation_penalty_per_minute: Mapped[float] = mapped_column(Float, default=5.0)
 
