@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QuickDispatch — Dispatcher Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: #1a1d27;
+      border-bottom: 1px solid #2d3148;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .logo { font-size: 20px; font-weight: 700; color: #7c6aff; letter-spacing: -0.5px; }
+    .logo span { color: #e2e8f0; }
+    .date-badge {
+      background: #2d3148;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+
+    /* ── Buttons ── */
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: #7c6aff; color: #fff; }
+    .btn-danger  { background: #ef4444; color: #fff; }
+    .btn-ghost   { background: #2d3148; color: #e2e8f0; }
+    .btn-success { background: #22c55e; color: #fff; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    /* ── Config Bar ── */
+    .config-bar {
+      background: #1a1d27;
+      border-bottom: 1px solid #2d3148;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .config-bar label { font-size: 12px; color: #94a3b8; }
+    .config-bar input {
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 6px;
+      color: #e2e8f0;
+      padding: 6px 10px;
+      font-size: 12px;
+      width: 280px;
+    }
+    .config-bar input:focus { outline: none; border-color: #7c6aff; }
+
+    /* ── Stats Bar ── */
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      padding: 16px 24px;
+      flex-wrap: wrap;
+    }
+    .stat-card {
+      background: #1a1d27;
+      border: 1px solid #2d3148;
+      border-radius: 10px;
+      padding: 12px 18px;
+      min-width: 130px;
+    }
+    .stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 24px; font-weight: 700; color: #e2e8f0; margin-top: 2px; }
+    .stat-value.red   { color: #ef4444; }
+    .stat-value.green { color: #22c55e; }
+    .stat-value.yellow { color: #f59e0b; }
+
+    /* ── Route Board ── */
+    .board {
+      display: flex;
+      gap: 16px;
+      padding: 0 24px 24px;
+      overflow-x: auto;
+      align-items: flex-start;
+    }
+
+    .tech-column {
+      background: #1a1d27;
+      border: 1px solid #2d3148;
+      border-radius: 12px;
+      min-width: 280px;
+      max-width: 300px;
+      flex-shrink: 0;
+    }
+
+    .tech-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid #2d3148;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .tech-name { font-weight: 600; font-size: 14px; }
+    .tech-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .tech-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+    .badge-ok      { background: #14532d; color: #4ade80; }
+    .badge-warning { background: #451a03; color: #fb923c; }
+    .badge-danger  { background: #450a0a; color: #f87171; }
+
+    .job-card {
+      margin: 10px;
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 12px;
+      position: relative;
+    }
+    .job-card.violated { border-color: #ef4444; }
+    .job-card.emergency { border-color: #f59e0b; }
+
+    .job-seq {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #2d3148;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 11px;
+      color: #64748b;
+    }
+    .job-customer { font-weight: 600; font-size: 13px; padding-right: 28px; }
+    .job-address  { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .job-type     { font-size: 11px; color: #94a3b8; margin-top: 6px; }
+
+    .job-times {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .time-chip {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: #1a1d27;
+      color: #94a3b8;
+    }
+    .time-chip.arrival  { color: #7c6aff; }
+    .time-chip.drive    { color: #38bdf8; }
+    .time-chip.violated { background: #450a0a; color: #f87171; }
+    .time-chip.window   { color: #94a3b8; }
+
+    .priority-dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    .p-low       { background: #475569; }
+    .p-normal    { background: #38bdf8; }
+    .p-high      { background: #f59e0b; }
+    .p-emergency { background: #ef4444; }
+
+    /* ── Unassigned Panel ── */
+    .unassigned-panel {
+      background: #1a1d27;
+      border: 1px solid #2d3148;
+      border-radius: 12px;
+      min-width: 260px;
+      max-width: 280px;
+      flex-shrink: 0;
+    }
+    .unassigned-panel .tech-header { border-color: #451a03; }
+    .unassigned-title { font-weight: 600; font-size: 14px; color: #fb923c; }
+
+    /* ── Emergency Modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #1a1d27;
+      border: 1px solid #2d3148;
+      border-radius: 14px;
+      padding: 24px;
+      width: 100%;
+      max-width: 520px;
+      margin: 0 16px;
+    }
+    .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+    .modal-sub   { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+
+    .modal input {
+      width: 100%;
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      color: #e2e8f0;
+      padding: 10px 12px;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .modal input:focus { outline: none; border-color: #7c6aff; }
+
+    .option-card {
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .option-card.rank-1 { border-color: #7c6aff; }
+    .option-rank {
+      font-size: 11px;
+      font-weight: 700;
+      color: #7c6aff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .option-tech { font-weight: 600; font-size: 14px; margin-top: 2px; }
+    .option-detail { font-size: 12px; color: #64748b; margin-top: 4px; }
+    .option-note {
+      font-size: 12px;
+      margin-top: 6px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: #1a1d27;
+    }
+    .option-note.clean   { color: #4ade80; }
+    .option-note.warning { color: #fb923c; }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    /* ── Loading / Empty States ── */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #475569;
+    }
+    .empty-state .icon { font-size: 32px; margin-bottom: 8px; }
+    .empty-state p { font-size: 13px; }
+
+    .loading {
+      text-align: center;
+      padding: 60px;
+      color: #475569;
+      font-size: 14px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #22c55e;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 300;
+      display: none;
+    }
+    .toast.error { background: #ef4444; }
+    .toast.show  { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">Quick<span>Dispatch</span></div>
+    <div class="date-badge" id="dateBadge">Loading...</div>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-ghost" onclick="loadRoutes()">Refresh</button>
+    <button class="btn btn-primary" onclick="buildRoutes()">Optimize Routes</button>
+    <button class="btn btn-danger" onclick="openEmergencyModal()">+ Emergency Job</button>
+  </div>
+</div>
+
+<!-- ── Config Bar ── -->
+<div class="config-bar">
+  <label>API URL</label>
+  <input type="text" id="apiUrl" value="http://localhost:8000" placeholder="http://localhost:8000" />
+  <label>Company ID</label>
+  <input type="text" id="companyId" placeholder="Paste company ID here" />
+  <button class="btn btn-ghost btn-sm" onclick="loadRoutes()">Load</button>
+</div>
+
+<!-- ── Stats Bar ── -->
+<div class="stats-bar" id="statsBar" style="display:none">
+  <div class="stat-card">
+    <div class="stat-label">Technicians</div>
+    <div class="stat-value" id="statTechs">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Jobs Today</div>
+    <div class="stat-value" id="statJobs">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Violations</div>
+    <div class="stat-value red" id="statViolations">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Unassigned</div>
+    <div class="stat-value yellow" id="statUnassigned">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Drive</div>
+    <div class="stat-value" id="statDrive">—</div>
+  </div>
+</div>
+
+<!-- ── Route Board ── -->
+<div class="board" id="board">
+  <div class="loading">Enter your Company ID above and click Load</div>
+</div>
+
+<!-- ── Emergency Modal ── -->
+<div class="modal-overlay" id="emergencyModal">
+  <div class="modal">
+    <div class="modal-title">Insert Emergency Job</div>
+    <div class="modal-sub">Enter the job ID to score insertion options across all technicians.</div>
+
+    <input type="text" id="emergencyJobId" placeholder="Job ID (UUID)" />
+
+    <div id="insertionOptions"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeEmergencyModal()">Cancel</button>
+      <button class="btn btn-danger" id="scoreBtn" onclick="scoreInsertion()">Score Options</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ── -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Helpers ── //
+
+  function getApiUrl()    { return document.getElementById('apiUrl').value.replace(/\/$/, ''); }
+  function getCompanyId() { return document.getElementById('companyId').value.trim(); }
+  function getToday()     { return '2026-03-26'; }
+
+  function fmt(isoStr) {
+    if (!isoStr) return '—';
+    const d = new Date(isoStr);
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => t.className = 'toast', 3000);
+  }
+
+  function priorityDot(p) {
+    return `<span class="priority-dot p-${p}"></span>`;
+  }
+
+  // ── Load Routes ── //
+
+  async function loadRoutes() {
+    const companyId = getCompanyId();
+    if (!companyId) { showToast('Paste your Company ID first', true); return; }
+
+    const today = getToday();
+    document.getElementById('dateBadge').textContent = today;
+    document.getElementById('board').innerHTML = '<div class="loading">Loading routes...</div>';
+
+    try {
+      const res = await fetch(`${getApiUrl()}/dispatch/daily-routes?company_id=${companyId}&target_date=${today}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      renderBoard(data);
+    } catch (e) {
+      document.getElementById('board').innerHTML = `<div class="loading">Error: ${e.message}</div>`;
+      showToast('Failed to load routes', true);
+    }
+  }
+
+  function renderBoard(data) {
+    const board = document.getElementById('board');
+    board.innerHTML = '';
+
+    // Stats
+    const totalViolations = data.routes.reduce((a, r) => a + r.violation_count, 0);
+    const totalJobs       = data.routes.reduce((a, r) => a + r.jobs.length, 0);
+    const totalDrive      = data.routes.reduce((a, r) => a + r.total_travel_minutes, 0);
+
+    document.getElementById('statTechs').textContent      = data.routes.length;
+    document.getElementById('statJobs').textContent       = totalJobs;
+    document.getElementById('statViolations').textContent = totalViolations;
+    document.getElementById('statUnassigned').textContent = data.unassigned_jobs.length;
+    document.getElementById('statDrive').textContent      = totalDrive + 'm';
+    document.getElementById('statsBar').style.display     = 'flex';
+
+    // Tech columns
+    data.routes.forEach(route => {
+      const col = document.createElement('div');
+      col.className = 'tech-column';
+
+      const badgeClass = route.violation_count === 0 ? 'badge-ok'
+                       : route.violation_count <= 1  ? 'badge-warning'
+                       : 'badge-danger';
+      const badgeText  = route.violation_count === 0 ? 'On Track'
+                       : `${route.violation_count} Violation${route.violation_count > 1 ? 's' : ''}`;
+
+      col.innerHTML = `
+        <div class="tech-header">
+          <div>
+            <div class="tech-name">${route.technician_name}</div>
+            <div class="tech-meta">${route.jobs.length} jobs · ${route.total_travel_minutes}min drive</div>
+          </div>
+          <span class="tech-badge ${badgeClass}">${badgeText}</span>
+        </div>
+      `;
+
+      if (route.jobs.length === 0) {
+        col.innerHTML += `
+          <div class="empty-state">
+            <div class="icon">📭</div>
+            <p>No jobs today</p>
+          </div>`;
+      } else {
+        route.jobs.forEach(job => {
+          const isViolated  = job.is_time_window_violated;
+          const isEmergency = job.priority === 'emergency';
+
+          const cardClass = isEmergency ? 'job-card emergency'
+                          : isViolated  ? 'job-card violated'
+                          : 'job-card';
+
+          const windowChip = job.window_start
+            ? `<span class="time-chip window">Window: ${fmt(job.window_start)}–${fmt(job.window_end)}</span>`
+            : '';
+
+          const violationChip = isViolated
+            ? `<span class="time-chip violated">Late ${job.violation_minutes}min</span>`
+            : '';
+
+          const driveChip = job.travel_minutes_from_prev
+            ? `<span class="time-chip drive">${job.travel_minutes_from_prev}min drive</span>`
+            : '';
+
+          col.innerHTML += `
+            <div class="${cardClass}">
+              <span class="job-seq">#${job.sequence}</span>
+              <div class="job-customer">${priorityDot(job.priority)}${job.customer_name}</div>
+              <div class="job-address">${job.customer_address}</div>
+              <div class="job-type">${job.job_type || 'General Service'} · ${job.estimated_duration_minutes}min</div>
+              <div class="job-times">
+                <span class="time-chip arrival">Arrive ${fmt(job.estimated_arrival)}</span>
+                ${driveChip}
+                ${windowChip}
+                ${violationChip}
+              </div>
+            </div>`;
+        });
+      }
+
+      board.appendChild(col);
+    });
+
+    // Unassigned column
+    if (data.unassigned_jobs.length > 0) {
+      const col = document.createElement('div');
+      col.className = 'tech-column unassigned-panel';
+      col.innerHTML = `
+        <div class="tech-header">
+          <div class="unassigned-title">Unassigned (${data.unassigned_jobs.length})</div>
+        </div>`;
+
+      data.unassigned_jobs.forEach(job => {
+        col.innerHTML += `
+          <div class="job-card" style="margin:10px">
+            <div class="job-customer">${priorityDot(job.priority)}${job.customer}</div>
+            <div class="job-address" style="margin-top:6px">
+              Required skills: ${job.required_skills?.join(', ') || 'none'}
+            </div>
+            <div style="margin-top:8px">
+              <button class="btn btn-ghost btn-sm" onclick="prefillEmergency('${job.id}')">
+                Score Insertion
+              </button>
+            </div>
+          </div>`;
+      });
+
+      board.appendChild(col);
+    }
+  }
+
+  // ── Build Routes ── //
+
+  async function buildRoutes() {
+    const companyId = getCompanyId();
+    if (!companyId) { showToast('Paste your Company ID first', true); return; }
+
+    showToast('Optimizing routes...');
+
+    try {
+      const res = await fetch(`${getApiUrl()}/dispatch/build-daily-routes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company_id: companyId, date: getToday() }),
+      });
+      const data = await res.json();
+      showToast(`Routes built: ${data.jobs_assigned} jobs assigned`);
+      loadRoutes();
+    } catch (e) {
+      showToast('Failed to build routes', true);
+    }
+  }
+
+  // ── Emergency Modal ── //
+
+  function openEmergencyModal() {
+    document.getElementById('emergencyJobId').value   = '';
+    document.getElementById('insertionOptions').innerHTML = '';
+    document.getElementById('emergencyModal').classList.add('open');
+  }
+
+  function closeEmergencyModal() {
+    document.getElementById('emergencyModal').classList.remove('open');
+  }
+
+  function prefillEmergency(jobId) {
+    document.getElementById('emergencyJobId').value = jobId;
+    document.getElementById('insertionOptions').innerHTML = '';
+    document.getElementById('emergencyModal').classList.add('open');
+  }
+
+  async function scoreInsertion() {
+    const companyId = getCompanyId();
+    const jobId     = document.getElementById('emergencyJobId').value.trim();
+    if (!jobId) { showToast('Enter a Job ID', true); return; }
+
+    document.getElementById('insertionOptions').innerHTML = '<div style="color:#64748b;font-size:13px;padding:8px 0">Scoring options...</div>';
+
+    try {
+      const res = await fetch(
+        `${getApiUrl()}/dispatch/insert-urgent?company_id=${companyId}&job_id=${jobId}`,
+        { method: 'POST' }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      renderInsertionOptions(data);
+    } catch (e) {
+      document.getElementById('insertionOptions').innerHTML =
+        `<div style="color:#ef4444;font-size:13px;padding:8px 0">Error: ${e.message}</div>`;
+    }
+  }
+
+  function renderInsertionOptions(data) {
+    const container = document.getElementById('insertionOptions');
+    container.innerHTML = '';
+
+    if (!data.options || data.options.length === 0) {
+      container.innerHTML = '<div style="color:#ef4444;font-size:13px;padding:8px 0">No eligible technicians found.</div>';
+      return;
+    }
+
+    data.options.forEach(opt => {
+      const noteClass = opt.downstream_violations === 0 ? 'clean' : 'warning';
+      const card = document.createElement('div');
+      card.className = `option-card${opt.rank === 1 ? ' rank-1' : ''}`;
+      card.innerHTML = `
+        <div style="flex:1">
+          <div class="option-rank">${opt.rank === 1 ? 'Best Option' : `Option ${opt.rank}`}</div>
+          <div class="option-tech">${opt.technician_name}</div>
+          <div class="option-detail">
+            Arrive ${fmt(opt.estimated_arrival)} · +${opt.travel_delta_minutes}min drive
+          </div>
+          <div class="option-note ${noteClass}">${opt.note}</div>
+        </div>
+        <button class="btn btn-success btn-sm" onclick="applyInsertion('${data.job_id}', '${opt.technician_id}', ${opt.insert_at_sequence})">
+          Assign
+        </button>`;
+      container.appendChild(card);
+    });
+  }
+
+  async function applyInsertion(jobId, techId, sequence) {
+    const companyId = getCompanyId();
+    try {
+      const res = await fetch(`${getApiUrl()}/dispatch/apply-insertion?company_id=${companyId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job_id: jobId, technician_id: techId, insert_at_sequence: sequence }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      closeEmergencyModal();
+      showToast('Job assigned — routes updated');
+      loadRoutes();
+    } catch (e) {
+      showToast('Failed to apply insertion', true);
+    }
+  }
+
+  // ── Init ── //
+  document.getElementById('dateBadge').textContent = getToday();
+</script>
+</body>
+</html>
+```
