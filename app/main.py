@@ -40,3 +40,10 @@ def serve_dashboard():
     """Serve the dispatcher dashboard."""
     path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "dashboard.html")
     return FileResponse(path)
+
+
+@app.get("/tech", tags=["system"])
+def serve_tech():
+    """Serve the technician mobile view."""
+    path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tech.html")
+    return FileResponse(path)

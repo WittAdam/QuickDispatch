@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>QuickDispatch — My Jobs</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: #1a1d27;
+      border-bottom: 1px solid #2d3148;
+      padding: 16px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { font-size: 17px; font-weight: 700; color: #7c6aff; }
+    .logo span { color: #e2e8f0; }
+    .tech-name-display {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+    .day-summary {
+      display: flex;
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .day-stat { font-size: 12px; color: #64748b; }
+    .day-stat strong { color: #e2e8f0; font-size: 14px; display: block; }
+
+    /* ── Setup Screen ── */
+    .setup-screen {
+      padding: 32px 20px;
+    }
+    .setup-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .setup-sub   { font-size: 14px; color: #64748b; margin-bottom: 24px; }
+    .setup-screen input {
+      width: 100%;
+      background: #1a1d27;
+      border: 1px solid #2d3148;
+      border-radius: 10px;
+      color: #e2e8f0;
+      padding: 14px 16px;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .setup-screen input:focus { outline: none; border-color: #7c6aff; }
+    .setup-screen input::placeholder { color: #475569; }
+
+    /* ── Buttons ── */
+    .btn {
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #7c6aff; color: #fff; }
+    .btn-success { background: #22c55e; color: #fff; }
+    .btn-danger  { background: #ef4444; color: #fff; }
+    .btn-ghost   {
+      background: #1a1d27;
+      border: 1px solid #2d3148;
+      color: #e2e8f0;
+      margin-top: 8px;
+    }
+    .btn-sm {
+      width: auto;
+      padding: 8px 16px;
+      font-size: 13px;
+      border-radius: 8px;
+    }
+
+    /* ── Tech Selector ── */
+    .tech-list { margin-bottom: 16px; }
+    .tech-option {
+      background: #1a1d27;
+      border: 1px solid #2d3148;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: border-color 0.15s;
+    }
+    .tech-option:hover  { border-color: #7c6aff; }
+    .tech-option.selected { border-color: #7c6aff; background: #1e1b3a; }
+    .tech-option-name  { font-weight: 600; font-size: 14px; }
+    .tech-option-skills { font-size: 12px; color: #64748b; margin-top: 2px; }
+    .tech-check {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 2px solid #2d3148;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .tech-option.selected .tech-check {
+      background: #7c6aff;
+      border-color: #7c6aff;
+      color: #fff;
+    }
+
+    /* ── Job Cards ── */
+    .jobs-list { padding: 16px 20px; }
+
+    .job-card {
+      background: #1a1d27;
+      border: 1px solid #2d3148;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    .job-card.current  { border-color: #7c6aff; }
+    .job-card.violated { border-color: #ef4444; }
+    .job-card.emergency { border-color: #f59e0b; }
+    .job-card.completed {
+      opacity: 0.5;
+      border-color: #1e293b;
+    }
+
+    .job-card-header {
+      padding: 14px 16px 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .job-number {
+      background: #2d3148;
+      border-radius: 8px;
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #94a3b8;
+      flex-shrink: 0;
+    }
+    .job-card.current .job-number   { background: #7c6aff; color: #fff; }
+    .job-card.emergency .job-number { background: #f59e0b; color: #000; }
+
+    .job-info { flex: 1; }
+    .job-customer { font-weight: 700; font-size: 15px; }
+    .job-type     { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+    .priority-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+    .p-emergency { background: #451a03; color: #fb923c; }
+    .p-high      { background: #422006; color: #fbbf24; }
+    .p-normal    { background: #1e293b; color: #94a3b8; }
+    .p-low       { background: #1e293b; color: #475569; }
+
+    .job-card-body { padding: 0 16px 14px; }
+
+    .job-address {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    .job-times-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .time-pill {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: #0f1117;
+    }
+    .time-pill.arrive  { color: #7c6aff; }
+    .time-pill.drive   { color: #38bdf8; }
+    .time-pill.duration { color: #94a3b8; }
+    .time-pill.window  { color: #64748b; }
+    .time-pill.late    { background: #450a0a; color: #f87171; }
+
+    .job-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    /* ── Current Job Banner ── */
+    .current-banner {
+      background: #1e1b3a;
+      border-bottom: 1px solid #7c6aff;
+      padding: 6px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #7c6aff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Notes ── */
+    .job-notes {
+      background: #0f1117;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    /* ── Empty / Loading ── */
+    .center-msg {
+      text-align: center;
+      padding: 60px 20px;
+      color: #475569;
+    }
+    .center-msg .icon { font-size: 40px; margin-bottom: 12px; }
+    .center-msg p { font-size: 14px; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #22c55e;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 300;
+      display: none;
+      white-space: nowrap;
+    }
+    .toast.error { background: #ef4444; }
+    .toast.show  { display: block; }
+
+    /* ── Completed checkmark ── */
+    .completed-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #22c55e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 4px 16px 10px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header (shown after login) -->
+<div class="header" id="appHeader" style="display:none">
+  <div class="header-top">
+    <div class="logo">Quick<span>Dispatch</span></div>
+    <button class="btn btn-ghost btn-sm" onclick="logout()" style="width:auto">Switch</button>
+  </div>
+  <div class="tech-name-display" id="techNameDisplay"></div>
+  <div class="day-summary" id="daySummary"></div>
+</div>
+
+<!-- Setup Screen -->
+<div id="setupScreen" class="setup-screen">
+  <div class="logo" style="font-size:22px;margin-bottom:20px">Quick<span>Dispatch</span></div>
+
+  <!-- Step 1: API config -->
+  <div id="step1">
+    <div class="setup-title">Welcome</div>
+    <div class="setup-sub">Enter your company details to get started.</div>
+    <input type="text" id="setupApiUrl"    value="http://localhost:8000" placeholder="API URL" />
+    <input type="text" id="setupCompanyId" placeholder="Company ID" />
+    <button class="btn btn-primary" onclick="loadTechs()">Continue</button>
+  </div>
+
+  <!-- Step 2: Pick your name -->
+  <div id="step2" style="display:none">
+    <div class="setup-title">Who are you?</div>
+    <div class="setup-sub">Select your name to see your jobs for today.</div>
+    <div class="tech-list" id="techList"></div>
+    <button class="btn btn-primary" onclick="confirmTech()">View My Jobs</button>
+    <button class="btn btn-ghost" onclick="backToStep1()">Back</button>
+  </div>
+</div>
+
+<!-- Jobs View -->
+<div id="jobsView" style="display:none">
+  <div class="jobs-list" id="jobsList"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  let selectedTechId   = null;
+  let selectedTechName = null;
+  let allTechs         = [];
+  let jobsData         = [];
+
+  const DEMO_DATE = '2026-03-26';
+
+  function getApiUrl()    { return document.getElementById('setupApiUrl').value.replace(/\/$/, ''); }
+  function getCompanyId() { return document.getElementById('setupCompanyId').value.trim(); }
+
+  function fmt(isoStr) {
+    if (!isoStr) return '—';
+    return new Date(isoStr).toLocaleTimeString('en-US', {
+      hour: 'numeric', minute: '2-digit', hour12: true
+    });
+  }
+
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => t.className = 'toast', 3000);
+  }
+
+  // ── Step 1: Load technicians ── //
+  async function loadTechs() {
+    const companyId = getCompanyId();
+    if (!companyId) { showToast('Enter your Company ID', true); return; }
+
+    try {
+      const res = await fetch(`${getApiUrl()}/companies/${companyId}/technicians`);
+      if (!res.ok) throw new Error('Company not found');
+      allTechs = await res.json();
+
+      const list = document.getElementById('techList');
+      list.innerHTML = '';
+      allTechs.forEach(tech => {
+        const div = document.createElement('div');
+        div.className = 'tech-option';
+        div.id = `tech-${tech.id}`;
+        div.onclick = () => selectTech(tech.id, tech.name);
+        div.innerHTML = `
+          <div>
+            <div class="tech-option-name">${tech.name}</div>
+            <div class="tech-option-skills">${tech.skills.join(', ') || 'General'}</div>
+          </div>
+          <div class="tech-check" id="check-${tech.id}"></div>`;
+        list.appendChild(div);
+      });
+
+      document.getElementById('step1').style.display = 'none';
+      document.getElementById('step2').style.display = 'block';
+    } catch (e) {
+      showToast(e.message, true);
+    }
+  }
+
+  function selectTech(id, name) {
+    // Deselect all
+    allTechs.forEach(t => {
+      document.getElementById(`tech-${t.id}`)?.classList.remove('selected');
+      const check = document.getElementById(`check-${t.id}`);
+      if (check) check.innerHTML = '';
+    });
+    // Select chosen
+    document.getElementById(`tech-${id}`)?.classList.add('selected');
+    const check = document.getElementById(`check-${id}`);
+    if (check) check.innerHTML = '✓';
+
+    selectedTechId   = id;
+    selectedTechName = name;
+  }
+
+  function backToStep1() {
+    document.getElementById('step1').style.display = 'block';
+    document.getElementById('step2').style.display = 'none';
+  }
+
+  async function confirmTech() {
+    if (!selectedTechId) { showToast('Select your name first', true); return; }
+    await loadJobs();
+  }
+
+  // ── Load jobs for selected tech ── //
+  async function loadJobs() {
+    const companyId = getCompanyId();
+
+    try {
+      const res = await fetch(
+        `${getApiUrl()}/dispatch/daily-routes?company_id=${companyId}&target_date=${DEMO_DATE}`
+      );
+      if (!res.ok) throw new Error('Could not load routes');
+      const data = await res.json();
+
+      // Find this tech's route
+      const route = data.routes.find(r => r.technician_id === selectedTechId);
+      jobsData = route ? route.jobs : [];
+
+      // Show app
+      document.getElementById('setupScreen').style.display  = 'none';
+      document.getElementById('appHeader').style.display    = 'block';
+      document.getElementById('jobsView').style.display     = 'block';
+
+      // Update header
+      document.getElementById('techNameDisplay').textContent = selectedTechName;
+
+      const totalDrive = route?.total_travel_minutes || 0;
+      document.getElementById('daySummary').innerHTML = `
+        <div class="day-stat"><strong>${jobsData.length}</strong>Jobs Today</div>
+        <div class="day-stat"><strong>${totalDrive}min</strong>Drive Time</div>
+        <div class="day-stat"><strong>${route?.violation_count || 0}</strong>Violations</div>`;
+
+      renderJobs();
+    } catch (e) {
+      showToast(e.message, true);
+    }
+  }
+
+  function renderJobs() {
+    const list = document.getElementById('jobsList');
+    list.innerHTML = '';
+
+    if (jobsData.length === 0) {
+      list.innerHTML = `
+        <div class="center-msg">
+          <div class="icon">🎉</div>
+          <p>No jobs scheduled for today</p>
+        </div>`;
+      return;
+    }
+
+    // Find the first non-completed job — that's the "current" job
+    const currentSeq = jobsData.find(j => j.status !== 'completed')?.sequence;
+
+    jobsData.forEach(job => {
+      const isCurrent   = job.sequence === currentSeq;
+      const isViolated  = job.is_time_window_violated;
+      const isEmergency = job.priority === 'emergency';
+      const isCompleted = job.status === 'completed';
+
+      let cardClass = 'job-card';
+      if (isCompleted) cardClass += ' completed';
+      else if (isCurrent)   cardClass += ' current';
+      else if (isEmergency) cardClass += ' emergency';
+      else if (isViolated)  cardClass += ' violated';
+
+      const priorityTag = isEmergency
+        ? '<span class="priority-tag p-emergency">Emergency</span>'
+        : job.priority === 'high'
+        ? '<span class="priority-tag p-high">High</span>'
+        : '';
+
+      const windowPill = job.window_start
+        ? `<span class="time-pill window">Window ${fmt(job.window_start)}–${fmt(job.window_end)}</span>`
+        : '';
+
+      const latePill = isViolated
+        ? `<span class="time-pill late">Running ${job.violation_minutes}min late</span>`
+        : '';
+
+      const drivePill = job.travel_minutes_from_prev
+        ? `<span class="time-pill drive">${job.travel_minutes_from_prev}min drive</span>`
+        : '';
+
+      const noteBlock = job.notes
+        ? `<div class="job-notes">${job.notes}</div>`
+        : '';
+
+      let actions = '';
+      if (!isCompleted) {
+        if (isCurrent && job.status === 'en_route') {
+          actions = `<button class="btn btn-success btn-sm" onclick="updateStatus('${job.job_id}', 'in_progress')">On Site</button>`;
+        } else if (isCurrent && job.status === 'in_progress') {
+          actions = `<button class="btn btn-success btn-sm" onclick="updateStatus('${job.job_id}', 'completed')">Mark Complete</button>`;
+        } else if (isCurrent) {
+          actions = `<button class="btn btn-primary btn-sm" onclick="updateStatus('${job.job_id}', 'en_route')">En Route</button>`;
+        }
+      }
+
+      const card = document.createElement('div');
+      card.className = cardClass;
+      card.id = `job-${job.job_id}`;
+
+      card.innerHTML = `
+        ${isCurrent && !isCompleted ? '<div class="current-banner">▶ Current Job</div>' : ''}
+        <div class="job-card-header">
+          <div class="job-number">${job.sequence}</div>
+          <div class="job-info">
+            <div class="job-customer">${job.customer_name}</div>
+            <div class="job-type">${job.job_type?.replace(/_/g, ' ') || 'Service Call'} · ${job.estimated_duration_minutes}min</div>
+          </div>
+          ${priorityTag}
+        </div>
+        <div class="job-card-body">
+          <div class="job-address">${job.customer_address}</div>
+          <div class="job-times-row">
+            <span class="time-pill arrive">Arrive ${fmt(job.estimated_arrival)}</span>
+            ${drivePill}
+            ${windowPill}
+            ${latePill}
+          </div>
+          ${noteBlock}
+          ${actions ? `<div class="job-actions">${actions}</div>` : ''}
+        </div>
+        ${isCompleted ? '<div class="completed-label">✓ Completed</div>' : ''}`;
+
+      list.appendChild(card);
+    });
+  }
+
+  // ── Status Updates ── //
+  async function updateStatus(jobId, newStatus) {
+    const companyId = getCompanyId();
+    try {
+      const res = await fetch(
+        `${getApiUrl()}/companies/${companyId}/jobs/${jobId}/status`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: newStatus,
+            actual_arrival: newStatus === 'in_progress' ? new Date().toISOString() : undefined,
+            actual_completion: newStatus === 'completed'  ? new Date().toISOString() : undefined,
+          }),
+        }
+      );
+      if (!res.ok) throw new Error('Update failed');
+
+      // Update local data and re-render
+      const job = jobsData.find(j => j.job_id === jobId);
+      if (job) job.status = newStatus;
+      renderJobs();
+      showToast(
+        newStatus === 'en_route'    ? 'Marked as En Route' :
+        newStatus === 'in_progress' ? 'Marked as On Site' :
+        'Job Completed'
+      );
+    } catch (e) {
+      showToast('Could not update status', true);
+    }
+  }
+
+  function logout() {
+    selectedTechId = selectedTechName = null;
+    document.getElementById('setupScreen').style.display  = 'block';
+    document.getElementById('appHeader').style.display    = 'none';
+    document.getElementById('jobsView').style.display     = 'none';
+    document.getElementById('step1').style.display        = 'block';
+    document.getElementById('step2').style.display        = 'none';
+  }
+</script>
+</body>
+</html>
+```
