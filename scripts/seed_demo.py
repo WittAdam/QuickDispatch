@@ -66,7 +66,7 @@ def seed():
                 "phone": "214-555-0102",
                 "home_lat": 32.8998,   # North Dallas / Plano area
                 "home_lon": -96.7640,
-                "skills": ["plumbing", "drain_cleaning", "gas_certified"],
+                "skills": ["plumbing", "drain_cleaning", "gas_certified", "commercial"],
             },
             {
                 "name": "Derek Thompson",
